@@ -88,4 +88,4 @@ function boost( $id, $type ) {
 
 	$response = wp_safe_remote_post( $boost_url, $args );
 }
-\add_action( 'activitypub_send_post', __NAMESPACE__ . '\boost', 10, 2 );
+\add_action( 'activitypub_send_post', __NAMESPACE__ . '\boost', 20, 2 );
