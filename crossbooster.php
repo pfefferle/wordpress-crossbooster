@@ -10,6 +10,7 @@
  * License URI: https://opensource.org/licenses/GPL-2.0
  * Text Domain: crossbooster
  * Domain Path: /languages
+ * Update URI: https://github.com/pfefferle/wordpress-crossbooster
  *
  * @package CrossBooster
  * @version 1.0.0
