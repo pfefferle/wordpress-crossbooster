@@ -30,7 +30,7 @@ namespace CrossBooster;
  *
  * @return void
  */
-function boost( $id, $type ) {
+function boost( $id, $type = 'Create' ) {
 	if ( 'Create' !== $type ) {
 		return;
 	}
