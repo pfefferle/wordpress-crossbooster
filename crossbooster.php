@@ -11,6 +11,7 @@
  * Text Domain: crossbooster
  * Domain Path: /languages
  * Update URI: https://github.com/pfefferle/wordpress-crossbooster
+ * Requires Plugins: activitypub
  *
  * @package CrossBooster
  * @version 1.0.0
