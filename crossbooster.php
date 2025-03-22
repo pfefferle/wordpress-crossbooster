@@ -71,8 +71,8 @@ function add_settings_field() {
 function render_settings_field() {
 	$disabled = '';
 
-	if ( defined( 'CROSSBOOSTER_DOMAIN' ) && defined( 'CROSSBOOSTER_ACCESS_KEY' ) ) {
-		$disabled = 'disabled';
+	if ( \defined( 'CROSSBOOSTER_DOMAIN' ) && \defined( 'CROSSBOOSTER_ACCESS_KEY' ) ) {
+		$disabled = \esc_attr( 'disabled' );
 	}
 	?>
 	<div id="crossbooster-settings">
@@ -108,11 +108,11 @@ function render_settings_field() {
  * @return string The option value.
  */
 function pre_option( $pre, $option ) {
-	if ( 'crossbooster_domain' === $option && defined( 'CROSSBOOSTER_DOMAIN' ) ) {
+	if ( 'crossbooster_domain' === $option && \defined( 'CROSSBOOSTER_DOMAIN' ) ) {
 		return CROSSBOOSTER_DOMAIN;
 	}
 
-	if ( 'crossbooster_access_key' === $option && defined( 'CROSSBOOSTER_ACCESS_KEY' ) ) {
+	if ( 'crossbooster_access_key' === $option && \defined( 'CROSSBOOSTER_ACCESS_KEY' ) ) {
 		return CROSSBOOSTER_ACCESS_KEY;
 	}
 
