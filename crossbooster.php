@@ -21,25 +21,123 @@ namespace CrossBooster;
 
 \defined( 'ABSPATH' ) || exit;
 
-\defined( 'CROSSBOOSTER_DOMAIN' ) || \define( 'CROSSBOOSTER_DOMAIN', null );
-\defined( 'CROSSBOOSTER_ACCESS_KEY' ) || \define( 'CROSSBOOSTER_ACCESS_KEY', null );
+/**
+ * Register options
+ */
+function register_setting() {
+	\register_setting(
+		'activitypub',
+		'crossbooster_domain',
+		array(
+			'type'              => 'string',
+			'description'       => __( 'The domain of the Mastodon instance', 'crossbooster' ),
+			'default'           => '',
+			'sanitize_callback' => function ( $value ) {
+				return \trim( \str_replace( array( 'http://', 'https://' ), '', \trim( $value, '/' ) ) );
+			},
+		)
+	);
+
+	\register_setting(
+		'activitypub',
+		'crossbooster_access_key',
+		array(
+			'type'              => 'string',
+			'description'       => __( 'The access key for the Mastodon instance', 'crossbooster' ),
+			'default'           => '',
+			'sanitize_callback' => 'sanitize_text_field',
+		)
+	);
+}
+\add_action( 'admin_init', __NAMESPACE__ . '\register_setting' );
+
+/**
+ * Add the settings to ActivityPub settings page
+ */
+function add_settings_field() {
+	\add_settings_field(
+		'crossbooster',
+		__( 'CrossBooster', 'crossbooster' ),
+		__NAMESPACE__ . '\render_settings_field',
+		'activitypub_settings',
+		'activitypub_general'
+	);
+}
+\add_action( 'load-settings_page_activitypub', __NAMESPACE__ . '\add_settings_field', 99 );
+
+/**
+ * Render the settings field
+ */
+function render_settings_field() {
+	?>
+	<div id="crossbooster-settings">
+		<p class="description">
+			<?php _e( 'CrossBooster is a plugin that allows you to cross-boost your ActivityPub posts on Mastodon.', 'crossbooster' ); ?>
+		</p>
+		<table class="form-table" role="presentation">
+			<tbody>
+				<tr>
+					<th scope="row"><?php \esc_html_e( 'Mastodon Domain', 'crossbooster' ); ?></th>
+					<td>
+						<input type="text" class="large-text code" id="crossbooster-domain" value="<?php echo \esc_attr( \get_option( 'crossbooster_domain' ) ); ?>" />
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php \esc_html_e( 'Access Key', 'crossbooster' ); ?></th>
+					<td>
+						<input type="text" class="large-text code" id="crossbooster-access-key" value="<?php echo \esc_attr( \get_option( 'crossbooster_access_key' ) ); ?>" />
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<?php
+}
+
+/**
+ * `get_option` Hook
+ *
+ * @param string $pre The option value.
+ * @param string $option The option name.
+ *
+ * @return string The option value.
+ */
+function pre_option( $pre, $option ) {
+	if ( 'crossbooster_domain' === $option && defined( 'CROSSBOOSTER_DOMAIN' ) ) {
+		return CROSSBOOSTER_DOMAIN;
+	}
+
+	if ( 'crossbooster_access_key' === $option && defined( 'CROSSBOOSTER_ACCESS_KEY' ) ) {
+		return CROSSBOOSTER_ACCESS_KEY;
+	}
+
+	return $pre;
+}
+\add_filter( 'pre_option', __NAMESPACE__ . '\pre_option', 10, 2 );
 
 /**
  * Boost a post on Mastodon
  *
- * @param int    $id   The post id.
- * @param string $type The ActivityPub type.
+ * @param array  $inboxes        The inboxes.
+ * @param string $json           The ActivityPub Activity JSON
  *
  * @return void
  */
-function boost( $id, $type = 'Create' ) {
-	if ( 'Create' !== $type ) {
+function boost( $inboxes, $json ) {
+	$activity = \json_decode( $json, true );
+
+	if (
+		! is_array( $activity ) ||
+		! isset( $activity['type'] ) ||
+		'Create' !== $activity['type'] ||
+		! isset( $activity['object']['id'] )
+	) {
 		return;
 	}
 
-	$permalink = \get_the_permalink( $id );
+	$id = $activity['object']['id'];
 
-	if ( ! $permalink ) {
+	if ( ! $id ) {
 		return;
 	}
 
@@ -48,15 +146,15 @@ function boost( $id, $type = 'Create' ) {
 		'redirection' => 5,
 		'headers'     => array(
 			'Content-Type'  => 'application/json; charset=utf-8',
-			'Authorization' => 'Basic ' . CROSSBOOSTER_ACCESS_KEY,
+			'Authorization' => 'Basic ' . \get_option( 'crossbooster_access_key' ),
 		),
 		'cookies'     => array(),
 	);
 
 	$search_url = sprintf(
 		'https://%s/api/v2/search?resolve=true&type=statuses&limit=1&q=%s',
-		CROSSBOOSTER_DOMAIN,
-		\rawurlencode( $permalink )
+		\get_option( 'crossbooster_domain' ),
+		\rawurlencode( $id )
 	);
 
 	$response = wp_safe_remote_get( $search_url, $args );
@@ -78,16 +176,16 @@ function boost( $id, $type = 'Create' ) {
 
 	$status = $data->statuses[0];
 
-	if ( $permalink !== $status['url'] ) {
+	if ( $id !== $status['url'] ) {
 		return;
 	}
 
 	$boost_url = sprintf(
 		'https://%s/api/v2/statuses/%s/reblog',
-		CROSSBOOSTER_DOMAIN,
+		\get_option( 'crossbooster_domain' ),
 		$status->id
 	);
 
 	$response = wp_safe_remote_post( $boost_url, $args );
 }
-\add_action( 'activitypub_send_post', __NAMESPACE__ . '\boost', 20, 2 );
+\add_action( 'activitypub_outbox_processing_complete', __NAMESPACE__ . '\boost', 10, 2 );

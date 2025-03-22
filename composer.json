@@ -2,7 +2,7 @@
     "name": "pfefferle/wordpress-crossbooster",
     "type": "wordpress-plugin",
     "license": "GPL-2.0",
-    "description": "An experimental plugin that Cross-Boosts ActivityPub enabled Posts on Mastodon",
+    "description": "An experimental plugin that Cross-Boosts ActivityPub enabled Posts on Mastodon.",
     "authors": [
         {
             "name": "Matthias Pfefferle"

@@ -1,0 +1,22 @@
+{
+  "name": "wordpress-crossbooster",
+  "version": "1.0.0",
+  "description": "An experimental plugin that Cross-Boosts ActivityPub enabled Posts on Mastodon.",
+  "homepage": "https://github.com/pfefferle/wordpress-crossbooster#readme",
+  "bugs": {
+    "url": "https://github.com/pfefferle/wordpress-crossbooster/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pfefferle/wordpress-crossbooster.git"
+  },
+  "license": "GPL-2.0",
+  "author": "Matthias Pfefferle",
+  "devDependencies": {
+    "@wordpress/env": "^10.10.0"
+  },
+  "scripts": {
+    "start": "wp-env start",
+    "stop": "wp-env stop"
+  }
+}
