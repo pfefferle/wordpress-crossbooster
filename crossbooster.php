@@ -69,6 +69,11 @@ function add_settings_field() {
  * Render the settings field
  */
 function render_settings_field() {
+	$disabled = '';
+
+	if ( defined( 'CROSSBOOSTER_DOMAIN' ) && defined( 'CROSSBOOSTER_ACCESS_KEY' ) ) {
+		$disabled = 'disabled';
+	}
 	?>
 	<div id="crossbooster-settings">
 		<p class="description">
@@ -79,13 +84,13 @@ function render_settings_field() {
 				<tr>
 					<th scope="row"><?php \esc_html_e( 'Mastodon Domain', 'crossbooster' ); ?></th>
 					<td>
-						<input type="text" class="large-text code" id="crossbooster-domain" value="<?php echo \esc_attr( \get_option( 'crossbooster_domain' ) ); ?>" />
+						<input type="text" class="large-text code" id="crossbooster-domain" value="<?php echo \esc_attr( \get_option( 'crossbooster_domain' ) ); ?>" <?php echo $disabled; ?> />
 					</td>
 				</tr>
 				<tr>
 					<th scope="row"><?php \esc_html_e( 'Access Key', 'crossbooster' ); ?></th>
 					<td>
-						<input type="text" class="large-text code" id="crossbooster-access-key" value="<?php echo \esc_attr( \get_option( 'crossbooster_access_key' ) ); ?>" />
+						<input type="text" class="large-text code" id="crossbooster-access-key" value="<?php echo \esc_attr( \get_option( 'crossbooster_access_key' ) ); ?>" <?php echo $disabled; ?> />
 					</td>
 				</tr>
 			</tbody>
