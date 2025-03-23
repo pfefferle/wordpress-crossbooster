@@ -86,7 +86,7 @@ function render_settings_field() {
 						<label for="crossbooster-domain"><?php \esc_html_e( 'Mastodon Domain', 'crossbooster' ); ?></label>
 					</th>
 					<td>
-						<input type="text" class="large-text code" id="crossbooster-domain" value="<?php echo \esc_attr( \get_option( 'crossbooster_domain' ) ); ?>" <?php echo $disabled; ?> />
+						<input type="text" class="large-text code" id="crossbooster-domain" name="crossbooster_domain" value="<?php echo \esc_attr( \get_option( 'crossbooster_domain' ) ); ?>" <?php echo $disabled; ?> />
 					</td>
 				</tr>
 				<tr>
@@ -94,7 +94,7 @@ function render_settings_field() {
 						<label for="crossbooster-access-key"><?php \esc_html_e( 'Access Key', 'crossbooster' ); ?></label>
 					</th>
 					<td>
-						<input type="text" class="large-text code" id="crossbooster-access-key" value="<?php echo \esc_attr( \get_option( 'crossbooster_access_key' ) ); ?>" <?php echo $disabled; ?> />
+						<input type="text" class="large-text code" id="crossbooster-access-key" name="crossbooster_access_key" value="<?php echo \esc_attr( \get_option( 'crossbooster_access_key' ) ); ?>" <?php echo $disabled; ?> />
 					</td>
 				</tr>
 			</tbody>
