@@ -31,7 +31,7 @@ function register_setting() {
 		array(
 			'type'              => 'string',
 			'description'       => __( 'The domain of the Mastodon instance', 'crossbooster' ),
-			'default'           => '',
+			'default'           => 'mastodon.social',
 			'sanitize_callback' => function ( $value ) {
 				return \trim( \str_replace( array( 'http://', 'https://' ), '', \trim( $value, '/' ) ) );
 			},
@@ -125,14 +125,14 @@ function pre_option( $pre, $option ) {
 \add_filter( 'pre_option', __NAMESPACE__ . '\pre_option', 10, 2 );
 
 /**
- * Boost a post on Mastodon
+ * Schedule a boost
  *
  * @param array  $inboxes        The inboxes.
  * @param string $json           The ActivityPub Activity JSON
  *
  * @return void
  */
-function boost( $inboxes, $json ) {
+function schedule_boost( $inboxes, $json ) {
 	$activity = \json_decode( $json, true );
 
 	if (
@@ -150,12 +150,29 @@ function boost( $inboxes, $json ) {
 		return;
 	}
 
+	$retries = 5;
+
+	\wp_schedule_single_event( \time() + 10, 'crossbooster_boost', array( $id, $retries ) );
+}
+
+/**
+ * Boost a post on Mastodon
+ *
+ * @param string $id The ID-URI of the post.
+ *
+ * @return void
+ */
+function boost( $id, $retries = 0 ) {
+	if ( $retries <= 0 ) {
+		return;
+	}
+
 	$args = array(
 		'timeout'     => 45,
 		'redirection' => 5,
 		'headers'     => array(
 			'Content-Type'  => 'application/json; charset=utf-8',
-			'Authorization' => 'Basic ' . \get_option( 'crossbooster_access_key' ),
+			'Authorization' => 'Bearer ' . \get_option( 'crossbooster_access_key' ),
 		),
 		'cookies'     => array(),
 	);
@@ -178,14 +195,17 @@ function boost( $inboxes, $json ) {
 	if (
 		! $data ||
 		! isset( $data->statuses ) ||
+		! is_array( $data->statuses ) ||
 		! isset( $data->statuses[0] )
 	) {
+		\wp_schedule_single_event( \time() + 10, 'crossbooster_boost', array( $id, $retries - 1 ) );
 		return;
 	}
 
 	$status = $data->statuses[0];
 
-	if ( $id !== $status['url'] ) {
+	if ( $id !== $status['uri'] ) {
+		\wp_schedule_single_event( \time() + 10, 'crossbooster_boost', array( $id, $retries - 1 ) );
 		return;
 	}
 
@@ -197,4 +217,4 @@ function boost( $inboxes, $json ) {
 
 	$response = wp_safe_remote_post( $boost_url, $args );
 }
-\add_action( 'activitypub_outbox_processing_complete', __NAMESPACE__ . '\boost', 10, 2 );
+\add_action( 'crossbooster_boost', __NAMESPACE__ . '\boost', 10, 2 );
