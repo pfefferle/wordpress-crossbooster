@@ -154,6 +154,7 @@ function schedule_boost( $inboxes, $json ) {
 
 	\wp_schedule_single_event( \time() + 10, 'crossbooster_boost', array( $id, $retries ) );
 }
+\add_action( 'activitypub_outbox_processing_complete', __NAMESPACE__ . '\schedule_boost', 10, 2 );
 
 /**
  * Boost a post on Mastodon
@@ -164,6 +165,15 @@ function schedule_boost( $inboxes, $json ) {
  */
 function boost( $id, $retries = 0 ) {
 	if ( $retries <= 0 ) {
+		\error_log( '[CrossBooster] Retries exhausted for: ' . $id );
+		return;
+	}
+
+	$access_key = \get_option( 'crossbooster_access_key' );
+	$domain     = \get_option( 'crossbooster_domain' );
+
+	if ( empty( $access_key ) || empty( $domain ) ) {
+		\error_log( '[CrossBooster] Missing access key or domain configuration' );
 		return;
 	}
 
@@ -172,14 +182,14 @@ function boost( $id, $retries = 0 ) {
 		'redirection' => 5,
 		'headers'     => array(
 			'Content-Type'  => 'application/json; charset=utf-8',
-			'Authorization' => 'Bearer ' . \get_option( 'crossbooster_access_key' ),
+			'Authorization' => 'Bearer ' . $access_key,
 		),
 		'cookies'     => array(),
 	);
 
 	$search_url = sprintf(
 		'https://%s/api/v2/search?resolve=true&type=statuses&limit=1&q=%s',
-		\get_option( 'crossbooster_domain' ),
+		$domain,
 		\rawurlencode( $id )
 	);
 
@@ -204,17 +214,28 @@ function boost( $id, $retries = 0 ) {
 
 	$status = $data->statuses[0];
 
-	if ( $id !== $status['uri'] ) {
+	if ( $id !== $status->uri ) {
 		\wp_schedule_single_event( \time() + 10, 'crossbooster_boost', array( $id, $retries - 1 ) );
 		return;
 	}
 
 	$boost_url = sprintf(
-		'https://%s/api/v2/statuses/%s/reblog',
-		\get_option( 'crossbooster_domain' ),
+		'https://%s/api/v1/statuses/%s/reblog',
+		$domain,
 		$status->id
 	);
 
 	$response = wp_safe_remote_post( $boost_url, $args );
+
+	if ( \is_wp_error( $response ) ) {
+		\error_log( '[CrossBooster] Failed to boost status: ' . $response->get_error_message() );
+		return;
+	}
+
+	$response_code = \wp_remote_retrieve_response_code( $response );
+
+	if ( $response_code < 200 || $response_code >= 300 ) {
+		\error_log( '[CrossBooster] Boost request failed with status ' . $response_code . ': ' . \wp_remote_retrieve_body( $response ) );
+	}
 }
 \add_action( 'crossbooster_boost', __NAMESPACE__ . '\boost', 10, 2 );
